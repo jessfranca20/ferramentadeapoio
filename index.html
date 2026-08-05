@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferramenta de Apoio — Pós-Venda</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#ffffff;--surface:#f7f6f4;--surface2:#eeece8;--surface3:#e4e1db;
+  --border:#e0ddd8;--text:#1a1916;--muted:#6b6860;--dim:#a8a49c;
+  --blue:#1a4a8a;--blue-bg:#f0f4fc;--blue-b:#c0d0ea;
+  --green:#1a6a3a;--green-bg:#f0faf4;--green-b:#b8e0c8;
+  --amber:#8a5c0a;--amber-bg:#fdf8f0;--amber-b:#e8d4a8;
+  --red:#c0392b;--red-bg:#fdf2f0;--red-b:#f0c8c2;
+  --purple:#4a1a8a;--purple-bg:#f4f0fc;--purple-b:#c8b8ea;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;padding:24px 16px;min-height:100vh}
+.container{max-width:760px;margin:0 auto}
+
+.header{text-align:center;margin-bottom:24px}
+.header h1{font-family:'DM Mono',monospace;font-size:19px;font-weight:500;letter-spacing:-.02em;margin-bottom:4px}
+.header p{font-size:12px;color:var(--muted)}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:5px;margin-bottom:20px}
+.tab{flex:1;padding:12px 16px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--surface3);color:var(--text)}
+.tab-icon{font-size:15px}
+
+.panel{display:none}
+.panel.active{display:block}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card-desc{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+
+/* FORM */
+.field{margin-bottom:16px}
+.field-label{display:block;font-size:12px;font-weight:500;color:var(--text);margin-bottom:6px}
+.field-hint{font-size:11px;color:var(--dim);margin-top:4px}
+input[type="date"],input[type="number"],input[type="text"],select,textarea{
+  width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;
+  transition:border-color .15s;-webkit-appearance:none;appearance:none;
+}
+input[type="date"]{font-family:'DM Mono',monospace}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+textarea{resize:vertical;line-height:1.6;min-height:80px}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.4)}
+select{background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2214%22%20height%3D%228%22%20viewBox%3D%220%200%2014%208%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M1%201l6%206%206-6%22%20stroke%3D%22%238a8880%22%20stroke-width%3D%221.5%22%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.seg{display:flex;gap:6px}
+.seg-btn{flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--muted);font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Mono',monospace}
+.seg-btn:hover{color:var(--text);border-color:var(--dim)}
+.seg-btn.active{background:var(--blue-bg);border-color:var(--blue-b);color:var(--blue)}
+
+/* RESULT */
+.result{margin-top:8px}
+.result-box{background:var(--blue-bg);border:1px solid var(--blue-b);border-radius:12px;padding:20px;margin-bottom:12px}
+.result-dates{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.rd{background:var(--surface);padding:14px 12px;text-align:center}
+.rd-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.rd-value{font-family:'DM Mono',monospace;font-size:16px;font-weight:500}
+.rd-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+.msg-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative}
+.msg-box-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.msg-text{font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap}
+.copy-btn{position:absolute;top:12px;right:12px;background:var(--surface3);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:6px 12px;border-radius:7px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s;display:flex;align-items:center;gap:5px}
+.copy-btn:hover{color:var(--text);border-color:var(--dim)}
+.copy-btn.copied{background:var(--green-bg);border-color:var(--green-b);color:var(--green)}
+.pdf-btn{width:100%;margin-top:12px;padding:13px;background:var(--blue);border:none;border-radius:9px;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.pdf-btn:hover{opacity:.9}
+
+/* PENALTY RESULT */
+.penalty-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.pg{background:var(--surface);padding:16px}
+.pg.full{grid-column:1/-1;background:var(--red-bg);border-top:2px solid var(--red-b)}
+.pg-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.pg-value{font-family:'DM Mono',monospace;font-size:20px;font-weight:500}
+.pg-sub{font-size:11px;color:var(--muted);margin-top:3px}
+
+.breakdown{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:12px}
+.breakdown-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.bd-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.bd-row:last-child{border-bottom:none}
+.bd-label{color:var(--muted)}
+.bd-value{font-family:'DM Mono',monospace;color:var(--text)}
+
+.empty{text-align:center;padding:32px 20px;color:var(--dim);font-size:13px}
+.empty-icon{font-size:28px;margin-bottom:10px;opacity:.5}
+
+.alert{background:var(--amber-bg);border:1px solid var(--amber-b);border-radius:9px;padding:12px 14px;font-size:12px;color:var(--amber);line-height:1.6;margin-top:12px;display:flex;gap:10px;align-items:flex-start}
+.alert-icon{flex-shrink:0;margin-top:1px}
+
+.note{font-size:11px;color:var(--dim);margin-top:16px;line-height:1.6;padding-top:14px;border-top:1px solid var(--border)}
+
+@media(max-width:560px){
+  .row,.result-dates,.penalty-grid{grid-template-columns:1fr}
+  .tab span:not(.tab-icon){display:none}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Ferramenta de Apoio — Pós-Venda</h1>
+    <p>Cálculo de prazos e multas contratuais · Grupo Containers</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(0)">
+      <span class="tab-icon">📅</span><span>Prazo de Entrega</span>
+    </button>
+    <button class="tab" onclick="switchTab(1)">
+      <span class="tab-icon">⚖️</span><span>Cálculo de Multa</span>
+    </button>
+    <button class="tab" onclick="switchTab(2)">
+      <span class="tab-icon">🛡️</span><span>Contestação</span>
+    </button>
+    <button class="tab" onclick="switchTab(3)">
+      <span class="tab-icon">🧾</span><span>Recibo</span>
+    </button>
+  </div>
+
+  <!-- ═══════════════ ABA 1 — PRAZO ═══════════════ -->
+  <div class="panel active" id="panel-0">
+    <div class="card">
+      <div class="card-title">📅 Cálculo de prazo de entrega</div>
+      <div class="card-desc">Informe a data de efetivação da compra e o prazo contratado. A ferramenta calcula em dias úteis e gera a mensagem pronta para enviar ao cliente.</div>
+
+      <div class="field">
+        <label class="field-label">Data de efetivação da compra</label>
+        <input type="date" id="dataCompra" onchange="calcPrazo()">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Prazo contratado (dias úteis)</label>
+        <div class="seg">
+          <button class="seg-btn" data-prazo="10" onclick="setPrazo(10)">10 dias</button>
+          <button class="seg-btn" data-prazo="20" onclick="setPrazo(20)">20 dias</button>
+          <button class="seg-btn" data-prazo="30" onclick="setPrazo(30)">30 dias</button>
+        </div>
+        <div class="field-hint">Tolerância operacional de +5 dias úteis é sempre adicionada automaticamente.</div>
+      </div>
+
+      <div id="resultPrazo" class="result"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ABA 2 — MULTA ═══════════════ -->
+  <div class="panel" id="panel-1">
+    <div class="card">
+      <div class="card-title">⚖️ Cálculo de multa por atraso ou cancelamento</div>
+      <div class="card-desc">Baseado na Cláusula Quarta do contrato: multa de 1% sobre o valor + juros de 0,5% ao mês, contados após o vencimento do prazo com tolerância.</div>
+
+      <div class="field">
+        <label class="field-label">Data de efetivação da compra</label>
+        <input type="date" id="multaDataCompra" onchange="calcMulta()">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Prazo contratado (dias úteis)</label>
+        <div class="seg">
+          <button class="seg-btn" data-prazo-multa="10" onclick="setPrazoMulta(10)">10 dias</button>
+          <button class="seg-btn" data-prazo-multa="20" onclick="setPrazoMulta(20)">20 dias</button>
+          <button class="seg-btn" data-prazo-multa="30" onclick="setPrazoMulta(30)">30 dias</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label class="field-label">Valor do contrato (R$)</label>
+          <input type="number" id="valorContrato" placeholder="0,00" step="0.01" oninput="calcMulta()">
+        </div>
+        <div class="field">
+          <label class="field-label">Data de entrega ou cancelamento</label>
+          <input type="date" id="dataFinal" onchange="calcMulta()">
+        </div>
+      </div>
+
+      <div id="resultMulta" class="result"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ABA 3 — CONTESTAÇÃO ═══════════════ -->
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="card-title">🛡️ Defesa de contestação de cartão (chargeback)</div>
+      <div class="card-desc">Descreva a situação do contrato do cliente e a ferramenta monta a defesa formal para envio à operadora. Selecione o cenário mais próximo e ajuste o texto antes de enviar.</div>
+
+      <div class="field">
+        <label class="field-label">Cenário da contestação</label>
+        <select id="cenarioContestacao" onchange="calcContestacao()">
+          <option value="">Selecione o cenário mais próximo...</option>
+          <option value="atraso_terminal_desistencia">Atraso na liberação pelo terminal + cliente desistiu antes da entrega</option>
+          <option value="entregue">Container foi entregue e cliente contesta mesmo assim</option>
+          <option value="aguardando">Dentro do prazo, entrega em andamento, cliente contesta</option>
+          <option value="personalizado">Personalizado (escrever do zero)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Descrição da situação do contrato</label>
+        <textarea id="descContestacao" rows="5" placeholder="Descreva o que aconteceu: data da compra, o que foi combinado, o que ocorreu na operação, como foi a comunicação com o cliente, e o motivo da contestação." oninput="calcContestacao()"></textarea>
+        <div class="field-hint">Quanto mais detalhes você incluir, mais completa fica a defesa. As informações são incorporadas ao texto final.</div>
+      </div>
+
+      <div id="resultContestacao" class="result"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ABA 4 — RECIBO ═══════════════ -->
+  <div class="panel" id="panel-3">
+    <div class="card">
+      <div class="card-title">🧾 Emissão de recibo</div>
+      <div class="card-desc">Preencha os dados e a ferramenta gera o recibo formatado, pronto para copiar. Os dados fixos das empresas do grupo podem ser preenchidos automaticamente.</div>
+
+      <div class="field">
+        <label class="field-label">Empresa emitente</label>
+        <select id="empresaRecibo" onchange="preencherEmpresa()">
+          <option value="">Selecione a empresa...</option>
+          <option value="ilha">Ilha Comércio de Containers LTDA.</option>
+          <option value="go">Comércio de Containers GO LTDA.</option>
+          <option value="everblue">Comércio de Containers Everblue LTDA.</option>
+          <option value="mineiro">Comércio de Containers Mineiro LTDA.</option>
+          <option value="outra">Outra empresa (preencher manualmente)</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label class="field-label">Nome da empresa emitente</label>
+          <input type="text" id="recNomeEmpresa" placeholder="Razão social" oninput="calcRecibo()">
+        </div>
+        <div class="field">
+          <label class="field-label">CNPJ da empresa</label>
+          <input type="text" id="recCnpjEmpresa" placeholder="00.000.000/0001-00" oninput="calcRecibo()">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label class="field-label">Nome do cliente / beneficiário</label>
+          <input type="text" id="recNomeCliente" placeholder="Nome completo ou razão social" oninput="calcRecibo()">
+        </div>
+        <div class="field">
+          <label class="field-label">CPF / CNPJ do cliente</label>
+          <input type="text" id="recDocCliente" placeholder="000.000.000-00" oninput="calcRecibo()">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label class="field-label">Valor (R$)</label>
+          <input type="number" id="recValor" placeholder="0,00" step="0.01" oninput="calcRecibo()">
+        </div>
+        <div class="field">
+          <label class="field-label">Data do recibo</label>
+          <input type="date" id="recData" onchange="calcRecibo()">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Referente a</label>
+        <input type="text" id="recReferente" placeholder="Ex: pagamento de container Dry 20 pés — contrato nº 000.2026" oninput="calcRecibo()">
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label class="field-label">Forma de pagamento</label>
+          <select id="recForma" onchange="calcRecibo()">
+            <option value="">Selecione...</option>
+            <option value="Pix">Pix</option>
+            <option value="Cartão de crédito">Cartão de crédito</option>
+            <option value="Transferência bancária (TED)">Transferência bancária (TED)</option>
+            <option value="Boleto">Boleto</option>
+            <option value="Dinheiro">Dinheiro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Cidade de emissão</label>
+          <input type="text" id="recCidade" placeholder="Cidade — UF" oninput="calcRecibo()">
+        </div>
+      </div>
+
+      <div id="resultRecibo" class="result"></div>
+    </div>
+  </div>
+
+  <div class="note">
+    ⚠️ Os feriados considerados são os nacionais brasileiros de 2025 e 2026. Feriados municipais e estaduais não estão incluídos — confira sempre o calendário local antes de confirmar prazos ao cliente.
+  </div>
+
+</div>
+
+<script>
+// ─── FERIADOS NACIONAIS 2025 / 2026 ───────────────────────────────
+const FERIADOS = new Set([
+  // 2025
+  '2025-01-01','2025-03-03','2025-03-04','2025-04-18','2025-04-21',
+  '2025-05-01','2025-06-19','2025-09-07','2025-10-12','2025-11-02',
+  '2025-11-15','2025-11-20','2025-12-25',
+  // 2026
+  '2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21',
+  '2026-05-01','2026-06-04','2026-09-07','2026-10-12','2026-11-02',
+  '2026-11-15','2026-11-20','2026-12-25',
+]);
+
+function ymd(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function isBusinessDay(d){
+  const dow = d.getDay();
+  if(dow===0||dow===6) return false;
+  if(FERIADOS.has(ymd(d))) return false;
+  return true;
+}
+// adiciona N dias úteis a uma data (não conta o dia inicial)
+function addBusinessDays(startDate, n){
+  let d = new Date(startDate.getTime());
+  let added = 0;
+  while(added < n){
+    d.setDate(d.getDate()+1);
+    if(isBusinessDay(d)) added++;
+  }
+  return d;
+}
+function parseDate(str){
+  if(!str) return null;
+  const [y,m,day] = str.split('-').map(Number);
+  return new Date(y, m-1, day);
+}
+function fmtBR(d){
+  if(!d) return '--/--/----';
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────
+function switchTab(i){
+  document.querySelectorAll('.tab').forEach((t,idx)=>t.classList.toggle('active',idx===i));
+  document.querySelectorAll('.panel').forEach((p,idx)=>p.classList.toggle('active',idx===i));
+}
+
+// ─── ABA 1 — PRAZO ────────────────────────────────────────────────
+let prazoSelecionado = null;
+function setPrazo(n){
+  prazoSelecionado = n;
+  document.querySelectorAll('[data-prazo]').forEach(b=>b.classList.toggle('active',+b.dataset.prazo===n));
+  calcPrazo();
+}
+function calcPrazo(){
+  const dataStr = document.getElementById('dataCompra').value;
+  const box = document.getElementById('resultPrazo');
+  if(!dataStr || !prazoSelecionado){
+    box.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>Selecione a data da compra e o prazo para ver o resultado</div>';
+    return;
+  }
+  const dataCompra = parseDate(dataStr);
+  const dataPrevisao = addBusinessDays(dataCompra, prazoSelecionado);
+  const dataMaxima = addBusinessDays(dataCompra, prazoSelecionado + 5);
+
+  const msg = `Considerando a efetivação da compra em ${fmtBR(dataCompra)}. A previsão inicial de entrega é até ${fmtBR(dataPrevisao)}.
+
+Além disso, o contrato prevê uma tolerância operacional de até 5 dias úteis, o que estabelece como prazo máximo a data de ${fmtBR(dataMaxima)}.
+
+Seguimos acompanhando seu pedido e manteremos você informado sobre qualquer atualização.`;
+
+  box.innerHTML = `
+    <div class="result-dates">
+      <div class="rd"><div class="rd-label">Compra</div><div class="rd-value" style="color:var(--muted)">${fmtBR(dataCompra)}</div></div>
+      <div class="rd"><div class="rd-label">Previsão</div><div class="rd-value" style="color:var(--blue)">${fmtBR(dataPrevisao)}</div><div class="rd-sub">${prazoSelecionado} dias úteis</div></div>
+      <div class="rd"><div class="rd-label">Prazo máximo</div><div class="rd-value" style="color:var(--amber)">${fmtBR(dataMaxima)}</div><div class="rd-sub">+5 tolerância</div></div>
+    </div>
+    <div class="msg-box">
+      <button class="copy-btn" onclick="copyMsg(this)">⧉ copiar</button>
+      <div class="msg-box-label">Mensagem para o cliente</div>
+      <div class="msg-text" id="msgPrazo">${msg}</div>
+    </div>`;
+}
+function copyMsg(btn){
+  const txt = document.getElementById('msgPrazo').innerText;
+  navigator.clipboard.writeText(txt).then(()=>{
+    btn.classList.add('copied');
+    btn.innerHTML = '✓ copiado';
+    setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='⧉ copiar';},2000);
+  });
+}
+
+// ─── ABA 2 — MULTA ────────────────────────────────────────────────
+let prazoMulta = null;
+function setPrazoMulta(n){
+  prazoMulta = n;
+  document.querySelectorAll('[data-prazo-multa]').forEach(b=>b.classList.toggle('active',+b.dataset.prazoMulta===n));
+  calcMulta();
+}
+function calcMulta(){
+  const compraStr = document.getElementById('multaDataCompra').value;
+  const finalStr = document.getElementById('dataFinal').value;
+  const valor = parseFloat(document.getElementById('valorContrato').value);
+  const box = document.getElementById('resultMulta');
+
+  if(!compraStr || !finalStr || !prazoMulta || !valor || valor<=0){
+    box.innerHTML = '<div class="empty"><div class="empty-icon">⚖️</div>Preencha todos os campos para calcular a multa</div>';
+    return;
+  }
+
+  const dataCompra = parseDate(compraStr);
+  const dataFinal = parseDate(finalStr);
+  // prazo máximo = prazo + 5 tolerância
+  const dataMaxima = addBusinessDays(dataCompra, prazoMulta + 5);
+
+  // dias de atraso = diferença corrida entre data final e data máxima
+  const msDia = 1000*60*60*24;
+  const diasAtraso = Math.floor((dataFinal - dataMaxima)/msDia);
+
+  if(diasAtraso <= 0){
+    box.innerHTML = `
+      <div class="result-box" style="background:var(--green-bg);border-color:var(--green-b)">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <span style="font-size:20px">✓</span>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--green);margin-bottom:4px">Dentro do prazo — sem multa</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.6">A data final (${fmtBR(dataFinal)}) está dentro do prazo máximo com tolerância (${fmtBR(dataMaxima)}). Não há multa nem juros a aplicar pela Cláusula Quarta.</div>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // meses de atraso — mês cheio (fração conta como mês)
+  const mesesAtraso = Math.ceil(diasAtraso / 30);
+
+  const multa = valor * 0.01;               // 1% fixo
+  const juros = valor * 0.005 * mesesAtraso; // 0,5% ao mês
+  const total = multa + juros;
+
+  const fmtMoeda = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  box.innerHTML = `
+    <div class="penalty-grid">
+      <div class="pg">
+        <div class="pg-label">Multa (1% fixo)</div>
+        <div class="pg-value" style="color:var(--amber)">${fmtMoeda(multa)}</div>
+        <div class="pg-sub">1% sobre o valor do contrato</div>
+      </div>
+      <div class="pg">
+        <div class="pg-label">Juros (0,5% ao mês)</div>
+        <div class="pg-value" style="color:var(--amber)">${fmtMoeda(juros)}</div>
+        <div class="pg-sub">${mesesAtraso} ${mesesAtraso===1?'mês':'meses'} × 0,5%</div>
+      </div>
+      <div class="pg full">
+        <div class="pg-label" style="color:var(--red)">Total devido ao comprador</div>
+        <div class="pg-value" style="color:var(--red);font-size:24px">${fmtMoeda(total)}</div>
+      </div>
+    </div>
+
+    <div class="breakdown">
+      <div class="breakdown-title">Detalhamento do cálculo</div>
+      <div class="bd-row"><span class="bd-label">Valor do contrato</span><span class="bd-value">${fmtMoeda(valor)}</span></div>
+      <div class="bd-row"><span class="bd-label">Prazo máximo (com tolerância)</span><span class="bd-value">${fmtBR(dataMaxima)}</span></div>
+      <div class="bd-row"><span class="bd-label">Data de entrega/cancelamento</span><span class="bd-value">${fmtBR(dataFinal)}</span></div>
+      <div class="bd-row"><span class="bd-label">Dias de atraso (após prazo máximo)</span><span class="bd-value">${diasAtraso} dias</span></div>
+      <div class="bd-row"><span class="bd-label">Meses para cálculo de juros</span><span class="bd-value">${mesesAtraso} ${mesesAtraso===1?'mês':'meses'}</span></div>
+      <div class="bd-row"><span class="bd-label">Multa (1%)</span><span class="bd-value">${fmtMoeda(multa)}</span></div>
+      <div class="bd-row"><span class="bd-label">Juros (0,5% × ${mesesAtraso})</span><span class="bd-value">${fmtMoeda(juros)}</span></div>
+    </div>
+
+    <div class="alert">
+      <span class="alert-icon">ℹ️</span>
+      <span>Cálculo conforme Cláusula Quarta: o atraso é contado a partir do prazo máximo (prazo + 5 dias úteis de tolerância). Os juros de 0,5% são aplicados por mês cheio — qualquer fração de mês conta como mês completo.</span>
+    </div>`;
+}
+
+// ─── ABA 3 — CONTESTAÇÃO ──────────────────────────────────────────
+const CENARIOS = {
+  atraso_terminal_desistencia: (desc) => `Prezados,
+
+Apresentamos nossa manifestação em relação à contestação da transação realizada pelo cliente.
+
+Após a formalização da compra, a empresa deu início aos procedimentos necessários para a disponibilização e entrega do equipamento contratado.
+
+Durante esse processo, ocorreu um atraso na liberação da unidade pelo terminal portuário, situação operacional alheia ao controle da empresa. Desde o início da ocorrência, mantivemos o cliente informado de forma transparente, prestando atualizações constantes sobre o andamento da liberação e acompanhando o processo junto ao terminal para que a entrega pudesse ser realizada no menor prazo possível.
+
+Importante destacar que a empresa jamais deixou de prestar atendimento ou de buscar a conclusão da operação. Ao contrário, permaneceu acompanhando diariamente a situação e comunicando todas as atualizações relevantes ao cliente.
+
+Entretanto, antes que a unidade fosse efetivamente liberada pelo terminal e a entrega pudesse ser concluída, o cliente informou que não desejava mais aguardar e optou por desistir da operação.
+
+Dessa forma, verifica-se que a empresa permaneceu apta e disposta a cumprir integralmente suas obrigações contratuais, sendo que a impossibilidade de conclusão da entrega decorreu, inicialmente, de fatores operacionais externos relacionados ao terminal portuário e, posteriormente, da decisão do próprio cliente de não aguardar a conclusão do processo.
+
+Não houve qualquer negativa de entrega, abandono da negociação ou conduta que caracterize fraude ou descumprimento deliberado das obrigações assumidas pela empresa.${desc ? `\n\nSobre o caso específico: ${desc}` : ''}
+
+Diante dos fatos, entendemos que a contestação não procede, uma vez que a empresa atuou de boa-fé, manteve comunicação constante com o cliente e adotou todas as providências cabíveis para viabilizar a entrega do equipamento.
+
+Solicitamos, portanto, a revisão do chargeback e a manutenção da validade da transação, colocando-nos à disposição para apresentar contrato, comprovante da transação, histórico das conversas, registros das atualizações prestadas ao cliente e demais documentos que comprovam a condução transparente da negociação e o acompanhamento realizado durante todo o processo.`,
+
+  entregue: (desc) => `Prezados,
+
+Apresentamos nossa manifestação em relação à contestação da transação realizada pelo cliente.
+
+Após a formalização da compra, a empresa cumpriu integralmente suas obrigações contratuais, realizando a entrega do equipamento adquirido ao cliente, conforme acordado no momento da contratação.
+
+A entrega foi devidamente concluída e documentada, havendo registro da operação, comprovação do recebimento do produto pelo cliente e assinatura do termo de entrega e recebimento.${desc ? `\n\nSobre o caso específico: ${desc}` : ''}
+
+Importante destacar que o cliente teve a oportunidade de verificar o equipamento no momento da entrega e recebeu o produto sem manifestar, naquele momento, qualquer irregularidade que justificasse a recusa ou a contestação do pagamento.
+
+Dessa forma, a contestação apresentada não procede, uma vez que o produto foi efetivamente entregue e recebido, não havendo qualquer hipótese de não prestação do serviço ou não entrega do bem.
+
+Solicitamos, portanto, a revisão do chargeback e a manutenção da validade da transação, colocando-nos à disposição para apresentar contrato, comprovante da transação, termo de entrega assinado, registros fotográficos da entrega, histórico das conversas e demais documentos que comprovam a conclusão da operação.`,
+
+  aguardando: (desc) => `Prezados,
+
+Apresentamos nossa manifestação em relação à contestação da transação realizada pelo cliente.
+
+Após a formalização da compra, a empresa deu início a todos os procedimentos necessários para a disponibilização e entrega do equipamento contratado, encontrando-se a operação em pleno andamento dentro do prazo previsto em contrato.
+
+A empresa tem mantido o cliente informado de forma transparente sobre cada etapa do processo, prestando atualizações constantes e permanecendo integralmente disponível para a conclusão da entrega.${desc ? `\n\nSobre o caso específico: ${desc}` : ''}
+
+A contestação foi realizada pelo cliente enquanto a operação ainda se encontrava dentro do prazo contratual e em curso normal, não havendo qualquer descumprimento por parte da empresa que a justifique.
+
+Verifica-se, portanto, que a empresa permanece apta e disposta a cumprir integralmente suas obrigações contratuais, não havendo qualquer negativa de entrega, abandono da negociação ou conduta que caracterize fraude.
+
+Solicitamos a revisão do chargeback e a manutenção da validade da transação, colocando-nos à disposição para apresentar contrato, comprovante da transação, histórico das conversas, registros das atualizações prestadas ao cliente e demais documentos que comprovam a condução transparente da negociação.`,
+
+  personalizado: (desc) => `Prezados,
+
+Apresentamos nossa manifestação em relação à contestação da transação realizada pelo cliente.
+
+${desc || '[Descreva aqui a situação do contrato, o que foi combinado, o que ocorreu na operação, como foi a comunicação com o cliente e o motivo da contestação.]'}
+
+Diante dos fatos apresentados, entendemos que a contestação não procede, uma vez que a empresa atuou de boa-fé, manteve comunicação constante com o cliente e adotou todas as providências cabíveis para o cumprimento de suas obrigações contratuais.
+
+Solicitamos, portanto, a revisão do chargeback e a manutenção da validade da transação, colocando-nos à disposição para apresentar contrato, comprovante da transação, histórico das conversas, registros das atualizações prestadas ao cliente e demais documentos que comprovam a condução transparente da negociação.`
+};
+
+function calcContestacao(){
+  const cenario = document.getElementById('cenarioContestacao').value;
+  const desc = document.getElementById('descContestacao').value.trim();
+  const box = document.getElementById('resultContestacao');
+
+  if(!cenario){
+    box.innerHTML = '<div class="empty"><div class="empty-icon">🛡️</div>Selecione o cenário para gerar a defesa</div>';
+    return;
+  }
+
+  const texto = CENARIOS[cenario](desc);
+
+  box.innerHTML = `
+    <div class="msg-box">
+      <button class="copy-btn" onclick="copyGeneric(this,'msgContestacao')">⧉ copiar</button>
+      <div class="msg-box-label">Defesa para envio à operadora</div>
+      <div class="msg-text" id="msgContestacao">${texto.replace(/</g,'&lt;')}</div>
+    </div>
+    <div class="alert" style="margin-top:12px">
+      <span class="alert-icon">ℹ️</span>
+      <span>Revise o texto antes de enviar. Anexe sempre: contrato assinado, comprovante da transação, histórico das conversas e registros das atualizações prestadas ao cliente.</span>
+    </div>`;
+}
+
+// ─── ABA 4 — RECIBO ───────────────────────────────────────────────
+const EMPRESAS_RECIBO = {
+  ilha:     {nome:'Ilha Comércio de Containers LTDA.', cnpj:'51.557.720/0001-93', cidade:'Balneário Camboriú — SC'},
+  go:       {nome:'Comércio de Containers GO LTDA.', cnpj:'57.405.249/0001-02', cidade:'Goiânia — GO'},
+  everblue: {nome:'Comércio de Containers Everblue LTDA.', cnpj:'64.762.252/0001-30', cidade:'São Paulo — SP'},
+  mineiro:  {nome:'Comércio de Containers Mineiro LTDA.', cnpj:'64.081.595/0001-30', cidade:'Belo Horizonte — MG'},
+};
+
+function preencherEmpresa(){
+  const sel = document.getElementById('empresaRecibo').value;
+  if(sel && sel!=='outra' && EMPRESAS_RECIBO[sel]){
+    const e = EMPRESAS_RECIBO[sel];
+    document.getElementById('recNomeEmpresa').value = e.nome;
+    document.getElementById('recCnpjEmpresa').value = e.cnpj;
+    document.getElementById('recCidade').value = e.cidade;
+  } else if(sel==='outra'){
+    document.getElementById('recNomeEmpresa').value = '';
+    document.getElementById('recCnpjEmpresa').value = '';
+    document.getElementById('recCidade').value = '';
+  }
+  calcRecibo();
+}
+
+// valor por extenso (reais)
+function valorExtenso(valor){
+  if(!valor || valor<=0) return '';
+  const unidades = ['','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+  const dezenas = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+  const centenas = ['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+
+  function ate999(n){
+    if(n===0) return '';
+    if(n===100) return 'cem';
+    let s='';
+    const c=Math.floor(n/100), resto=n%100;
+    if(c>0) s+=centenas[c];
+    if(resto>0){
+      if(s) s+=' e ';
+      if(resto<20) s+=unidades[resto];
+      else{
+        const d=Math.floor(resto/10), u=resto%10;
+        s+=dezenas[d];
+        if(u>0) s+=' e '+unidades[u];
+      }
+    }
+    return s;
+  }
+
+  const inteiro = Math.floor(valor);
+  const centavos = Math.round((valor-inteiro)*100);
+  let ext='';
+
+  if(inteiro===0) ext='zero';
+  else if(inteiro<1000) ext=ate999(inteiro);
+  else if(inteiro<1000000){
+    const milhar=Math.floor(inteiro/1000), resto=inteiro%1000;
+    ext=(milhar===1?'mil':ate999(milhar)+' mil');
+    if(resto>0) ext+=(resto<100||resto%100===0?' e ':' ')+ate999(resto);
+  } else {
+    return null; // acima de 1 milhão, não gera extenso
+  }
+
+  ext += (inteiro===1?' real':' reais');
+  if(centavos>0){
+    ext += ' e '+ate999(centavos)+(centavos===1?' centavo':' centavos');
+  }
+  return ext.charAt(0).toUpperCase()+ext.slice(1);
+}
+
+function calcRecibo(){
+  const nomeEmp = document.getElementById('recNomeEmpresa').value.trim();
+  const cnpjEmp = document.getElementById('recCnpjEmpresa').value.trim();
+  const nomeCli = document.getElementById('recNomeCliente').value.trim();
+  const docCli = document.getElementById('recDocCliente').value.trim();
+  const valor = parseFloat(document.getElementById('recValor').value);
+  const dataStr = document.getElementById('recData').value;
+  const referente = document.getElementById('recReferente').value.trim();
+  const forma = document.getElementById('recForma').value;
+  const cidade = document.getElementById('recCidade').value.trim();
+  const box = document.getElementById('resultRecibo');
+
+  if(!nomeEmp || !cnpjEmp || !nomeCli || !valor || valor<=0 || !dataStr){
+    box.innerHTML = '<div class="empty"><div class="empty-icon">🧾</div>Preencha empresa, cliente, valor e data para gerar o recibo</div>';
+    return;
+  }
+
+  const fmtMoeda = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const data = parseDate(dataStr);
+  const ext = valorExtenso(valor);
+  const dataExtenso = data.getDate()+' de '+['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][data.getMonth()]+' de '+data.getFullYear();
+
+  const texto = `RECIBO
+
+Valor: ${fmtMoeda(valor)}${ext ? '\n('+ext+')' : ''}
+
+${nomeEmp}, inscrita no CNPJ sob o nº ${cnpjEmp}, DECLARA que recebeu de ${nomeCli}${docCli ? ', inscrito(a) no CPF/CNPJ sob o nº '+docCli+',' : ''} a importância de ${fmtMoeda(valor)}${ext ? ' ('+ext+')' : ''}${referente ? ', referente a '+referente : ''}${forma ? ', pago(a) via '+forma : ''}.
+
+Para maior clareza, firmamos o presente recibo, dando plena, geral e irrevogável quitação do valor acima descrito.
+
+${cidade ? cidade+', ' : ''}${dataExtenso}.
+
+
+_______________________________________________
+${nomeEmp}
+CNPJ: ${cnpjEmp}`;
+
+  // guarda os dados para o PDF
+  window._reciboData = {nomeEmp, cnpjEmp, nomeCli, docCli, valor, fmtMoeda, ext, referente, forma, cidade, dataExtenso};
+
+  box.innerHTML = `
+    <div class="msg-box">
+      <button class="copy-btn" onclick="copyGeneric(this,'msgRecibo')">⧉ copiar</button>
+      <div class="msg-box-label">Prévia do recibo</div>
+      <div class="msg-text" id="msgRecibo" style="font-family:'DM Mono',monospace;font-size:12px">${texto.replace(/</g,'&lt;')}</div>
+    </div>
+    <button class="pdf-btn" onclick="gerarPDFRecibo()">📄 Baixar recibo em PDF</button>
+    <div class="alert" style="margin-top:12px">
+      <span class="alert-icon">ℹ️</span>
+      <span>O recibo é um comprovante de pagamento e não substitui a nota fiscal. Confira todos os dados antes de enviar ao cliente.</span>
+    </div>`;
+}
+
+function gerarPDFRecibo(){
+  const d = window._reciboData;
+  if(!d) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+
+  const pageW = 210, margin = 22, contentW = pageW - margin*2;
+  let y = 32;
+
+  // Cabeçalho — nome da empresa
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(15);
+  doc.setTextColor(26,74,138);
+  doc.text(d.nomeEmp, pageW/2, y, {align:'center'});
+  y += 6;
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(10);
+  doc.setTextColor(107,104,96);
+  doc.text('CNPJ: '+d.cnpjEmp+(d.cidade?'  ·  '+d.cidade:''), pageW/2, y, {align:'center'});
+  y += 8;
+
+  // Linha divisória
+  doc.setDrawColor(26,74,138);
+  doc.setLineWidth(0.6);
+  doc.line(margin, y, pageW-margin, y);
+  y += 16;
+
+  // Título RECIBO
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(20);
+  doc.setTextColor(26,25,22);
+  doc.text('RECIBO', pageW/2, y, {align:'center'});
+  y += 12;
+
+  // Box do valor
+  doc.setFillColor(240,244,252);
+  doc.setDrawColor(192,208,234);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(margin, y-6, contentW, 16, 2, 2, 'FD');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(16);
+  doc.setTextColor(26,74,138);
+  doc.text(d.fmtMoeda(d.valor), pageW/2, y+1, {align:'center'});
+  if(d.ext){
+    doc.setFont('helvetica','italic');
+    doc.setFontSize(9);
+    doc.setTextColor(107,104,96);
+    doc.text('('+d.ext+')', pageW/2, y+6, {align:'center'});
+  }
+  y += 22;
+
+  // Corpo declaratório
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(11);
+  doc.setTextColor(26,25,22);
+
+  let corpo = d.nomeEmp+', inscrita no CNPJ sob o nº '+d.cnpjEmp+', DECLARA que recebeu de '+d.nomeCli;
+  if(d.docCli) corpo += ', inscrito(a) no CPF/CNPJ sob o nº '+d.docCli+',';
+  corpo += ' a importância de '+d.fmtMoeda(d.valor);
+  if(d.ext) corpo += ' ('+d.ext+')';
+  if(d.referente) corpo += ', referente a '+d.referente;
+  if(d.forma) corpo += ', pago(a) via '+d.forma;
+  corpo += '.';
+
+  const linhas = doc.splitTextToSize(corpo, contentW);
+  doc.text(linhas, margin, y, {align:'justify', maxWidth:contentW, lineHeightFactor:1.6});
+  y += linhas.length * 6.4 + 8;
+
+  const quit = 'Para maior clareza, firmamos o presente recibo, dando plena, geral e irrevogável quitação do valor acima descrito.';
+  const linhasQuit = doc.splitTextToSize(quit, contentW);
+  doc.text(linhasQuit, margin, y, {align:'justify', maxWidth:contentW, lineHeightFactor:1.6});
+  y += linhasQuit.length * 6.4 + 14;
+
+  // Data
+  doc.text((d.cidade?d.cidade+', ':'')+d.dataExtenso+'.', margin, y);
+  y += 26;
+
+  // Assinatura
+  doc.setDrawColor(26,25,22);
+  doc.setLineWidth(0.4);
+  doc.line(pageW/2-40, y, pageW/2+40, y);
+  y += 5;
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.setTextColor(26,25,22);
+  doc.text(d.nomeEmp, pageW/2, y, {align:'center'});
+  y += 5;
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(107,104,96);
+  doc.text('CNPJ: '+d.cnpjEmp, pageW/2, y, {align:'center'});
+
+  // Rodapé
+  doc.setFontSize(8);
+  doc.setTextColor(168,164,156);
+  doc.text('Este recibo é um comprovante de pagamento e não substitui a nota fiscal.', pageW/2, 280, {align:'center'});
+
+  // Nome do arquivo
+  const nomeArq = 'Recibo_'+d.nomeCli.replace(/[^a-zA-Z0-9]/g,'_').substring(0,30)+'.pdf';
+  doc.save(nomeArq);
+}
+
+// ─── COPY GENÉRICO ────────────────────────────────────────────────
+function copyGeneric(btn, elId){
+  const txt = document.getElementById(elId).innerText;
+  navigator.clipboard.writeText(txt).then(()=>{
+    btn.classList.add('copied');
+    btn.innerHTML = '✓ copiado';
+    setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='⧉ copiar';},2000);
+  });
+}
+</script>
+
+</body>
+</html>
