@@ -149,7 +149,7 @@ select{background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%
           <button class="seg-btn" data-prazo="20" onclick="setPrazo(20)">20 dias</button>
           <button class="seg-btn" data-prazo="30" onclick="setPrazo(30)">30 dias</button>
         </div>
-        <div class="field-hint">Tolerância operacional de +5 dias úteis é sempre adicionada automaticamente.</div>
+        <div class="field-hint">Tolerância operacional de +10 dias úteis é sempre adicionada automaticamente.</div>
       </div>
 
       <div id="resultPrazo" class="result"></div>
@@ -366,11 +366,11 @@ function calcPrazo(){
   }
   const dataCompra = parseDate(dataStr);
   const dataPrevisao = addBusinessDays(dataCompra, prazoSelecionado);
-  const dataMaxima = addBusinessDays(dataCompra, prazoSelecionado + 5);
+  const dataMaxima = addBusinessDays(dataCompra, prazoSelecionado + 10);
 
   const msg = `Considerando a efetivação da compra em ${fmtBR(dataCompra)}. A previsão inicial de entrega é até ${fmtBR(dataPrevisao)}.
 
-Além disso, o contrato prevê uma tolerância operacional de até 5 dias úteis, o que estabelece como prazo máximo a data de ${fmtBR(dataMaxima)}.
+Além disso, o contrato prevê uma tolerância operacional de até 10 dias úteis, o que estabelece como prazo máximo a data de ${fmtBR(dataMaxima)}.
 
 Seguimos acompanhando seu pedido e manteremos você informado sobre qualquer atualização.`;
 
@@ -378,7 +378,7 @@ Seguimos acompanhando seu pedido e manteremos você informado sobre qualquer atu
     <div class="result-dates">
       <div class="rd"><div class="rd-label">Compra</div><div class="rd-value" style="color:var(--muted)">${fmtBR(dataCompra)}</div></div>
       <div class="rd"><div class="rd-label">Previsão</div><div class="rd-value" style="color:var(--blue)">${fmtBR(dataPrevisao)}</div><div class="rd-sub">${prazoSelecionado} dias úteis</div></div>
-      <div class="rd"><div class="rd-label">Prazo máximo</div><div class="rd-value" style="color:var(--amber)">${fmtBR(dataMaxima)}</div><div class="rd-sub">+5 tolerância</div></div>
+      <div class="rd"><div class="rd-label">Prazo máximo</div><div class="rd-value" style="color:var(--amber)">${fmtBR(dataMaxima)}</div><div class="rd-sub">+10 tolerância</div></div>
     </div>
     <div class="msg-box">
       <button class="copy-btn" onclick="copyMsg(this)">⧉ copiar</button>
@@ -415,8 +415,8 @@ function calcMulta(){
 
   const dataCompra = parseDate(compraStr);
   const dataFinal = parseDate(finalStr);
-  // prazo máximo = prazo + 5 tolerância
-  const dataMaxima = addBusinessDays(dataCompra, prazoMulta + 5);
+  // prazo máximo = prazo + 10 tolerância
+  const dataMaxima = addBusinessDays(dataCompra, prazoMulta + 10);
 
   // dias de atraso = diferença corrida entre data final e data máxima
   const msDia = 1000*60*60*24;
@@ -476,7 +476,7 @@ function calcMulta(){
 
     <div class="alert">
       <span class="alert-icon">ℹ️</span>
-      <span>Cálculo conforme Cláusula Quarta: o atraso é contado a partir do prazo máximo (prazo + 5 dias úteis de tolerância). Os juros de 0,5% são aplicados por mês cheio — qualquer fração de mês conta como mês completo.</span>
+      <span>Cálculo conforme Cláusula Quarta: o atraso é contado a partir do prazo máximo (prazo + 10 dias úteis de tolerância). Os juros de 0,5% são aplicados por mês cheio — qualquer fração de mês conta como mês completo.</span>
     </div>`;
 }
 
